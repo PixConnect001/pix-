@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Pix Copia e Cola</title>
+<style>
+:root{
+  --bg:#eaf1ef; --card:#ffffff; --ink:#0d2b2a; --muted:#51666a; --head:#0d2b2a;
+  --teal:#0f7a6e; --teal-dark:#0a5d54; --mint:#e3f3ef; --line:#d3e0dd; --pix:#32bcad;
+  --field:#f8fbfa; --okbg:#0d2b2a; --err:#a4262c;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1716; --card:#12211f; --ink:#e6f2ef; --muted:#9db5b0; --head:#0a1f1e;
+    --teal:#138a7c; --teal-dark:#5fd4c4; --mint:#173530; --line:#26403c;
+    --field:#0d1b19; --okbg:#1d5c53; --err:#ff8a8f; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1716; --card:#12211f; --ink:#e6f2ef; --muted:#9db5b0; --head:#0a1f1e;
+  --teal:#138a7c; --teal-dark:#5fd4c4; --mint:#173530; --line:#26403c;
+  --field:#0d1b19; --okbg:#1d5c53; --err:#ff8a8f; color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  display:flex;justify-content:center;align-items:flex-start;padding:28px 16px}
+main{width:100%;max-width:480px}
+.card{background:var(--card);border-radius:20px;overflow:hidden;
+  box-shadow:0 1px 2px rgba(0,0,0,.08),0 12px 32px rgba(0,0,0,.10)}
+.head{background:var(--head);color:#fff;padding:22px 24px 20px;display:flex;align-items:center;gap:14px}
+.mark{width:34px;height:34px;flex:none}
+.head h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em}
+.head p{margin:2px 0 0;font-size:13px;color:#a9c9c4}
+.body{padding:24px}
+.payee{display:grid;gap:2px;padding:14px 16px;background:var(--mint);border-radius:12px;border-left:4px solid var(--pix)}
+.payee[hidden]{display:none}
+.payee small{color:var(--muted);font-size:12px}
+.payee strong{font-size:16px;line-height:1.3;overflow-wrap:anywhere}
+.payee .row{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.amount{font-size:22px;font-weight:700;color:var(--teal-dark)}
+label.field{display:block;margin:22px 0 8px;font-size:14px;font-weight:600}
+textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--field);color:var(--ink);
+  font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere;resize:none}
+#pix{height:112px}
+button{font:inherit;cursor:pointer;border:0;-webkit-tap-highlight-color:transparent}
+#copy{width:100%;margin-top:14px;padding:16px;border-radius:12px;background:var(--teal);color:#fff;
+  font-size:17px;font-weight:700;transition:background .15s,transform .1s}
+#copy:hover{filter:brightness(.92)}
+#copy:active{transform:scale(.985)}
+#copy.ok{background:var(--okbg)}
+#status{min-height:22px;margin:10px 0 0;font-size:14px;color:var(--teal-dark);text-align:center}
+#status.err{color:var(--err)}
+.alt{margin:4px 0 0;font-size:12.5px;color:var(--muted);text-align:center}
+ol{margin:18px 0 0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:s}
+ol li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;font-size:14px;line-height:1.45;color:var(--muted)}
+ol li::before{content:counter(s);width:28px;height:28px;border-radius:50%;background:var(--mint);color:var(--teal-dark);
+  font-weight:700;font-size:13px;display:grid;place-items:center}
+ol b{color:var(--ink)}
+.safe{margin:22px 0 0;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5;color:var(--muted)}
+:focus-visible{outline:3px solid var(--pix);outline-offset:2px}
+
+#copy:disabled{opacity:.5;cursor:not-allowed}
+@media (prefers-reduced-motion:reduce){#copy{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <div class="head">
+      <svg class="mark" viewBox="0 0 34 34" aria-hidden="true"><rect x="6" y="6" width="22" height="22" rx="4" transform="rotate(45 17 17)" fill="#32bcad"/><rect x="12" y="12" width="10" height="10" rx="2" transform="rotate(45 17 17)" fill="#0d2b2a"/></svg>
+      <div><h1>Pagar com Pix</h1><p>Pix Copia e Cola</p></div>
+    </div>
+    <div class="body">
+      <div class="payee" id="payee" hidden>
+        <small>Quem vai receber</small>
+        <strong id="nome"></strong>
+        <div class="row"><small id="cidade"></small><span class="amount" id="valor"></span></div>
+      </div>
+
+      <label class="field" for="pix">Código Pix</label>
+      <textarea id="pix" readonly spellcheck="false" placeholder="Carregando o código..."></textarea>
+      <button id="copy" type="button">Copiar código Pix</button>
+      <p id="status" role="status" aria-live="polite"></p>
+      <p class="alt">Se não copiar, segure o dedo sobre o código acima e escolha “Copiar”.</p>
+
+      <ol>
+        <li><span>Toque em <b>Copiar código Pix</b>.</span></li>
+        <li><span>Abra o app do seu banco e vá em <b>Pix</b> &rsaquo; <b>Pix Copia e Cola</b>.</span></li>
+        <li><span>Cole o código, confira o nome do recebedor e confirme o pagamento.</span></li>
+      </ol>
+      <p class="safe">Antes de pagar, confira no app do banco se o nome do recebedor e o valor estão corretos.</p>
+    </div>
+  </div>
+</main>
+<script>
+(function(){
+  var pix = document.getElementById('pix');
+  var btn = document.getElementById('copy');
+  var msg = document.getElementById('status');
+  var timer;
+
+  /* ---------- Copiar ---------- */
+  function selecionar(el){
+    el.focus(); el.select();
+    try { el.setSelectionRange(0, el.value.length); } catch(e) {}
+  }
+  function copiarSelecao(){
+    selecionar(pix);
+    try { return document.execCommand('copy'); } catch(e) { return false; }
+  }
+  function copiarTemp(texto){
+    var ta = document.createElement('textarea');
+    ta.value = texto;
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select(); ta.setSelectionRange(0, texto.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+    return ok;
+  }
+  function aviso(texto, erro, ok){
+    msg.textContent = texto;
+    msg.className = erro ? 'err' : '';
+    btn.classList.toggle('ok', !!ok);
+    btn.textContent = ok ? 'Código copiado!' : 'Copiar código Pix';
+    clearTimeout(timer);
+    if (ok) timer = setTimeout(function(){ btn.classList.remove('ok'); btn.textContent='Copiar código Pix'; msg.textContent=''; }, 4000);
+  }
+  function sucesso(){ aviso('Copiado! Agora é só colar no app do seu banco.', false, true); }
+  function manual(){
+    selecionar(pix);
+    aviso('Não deu para copiar sozinho. O código está selecionado: segure nele e toque em “Copiar”.', true, false);
+  }
+  btn.addEventListener('click', function(){
+    var texto = pix.value.trim();
+    var ok = copiarSelecao() || copiarTemp(texto);
+    var api;
+    try { api = (navigator.clipboard && window.isSecureContext) ? navigator.clipboard.writeText(texto) : Promise.reject(); }
+    catch(e) { api = Promise.reject(); }
+    api.then(sucesso, function(){ ok ? sucesso() : manual(); });
+    if (!ok) selecionar(pix);
+  });
+
+  /* ---------- Ler dados do código ---------- */
+  function tlv(s){
+    var o = {}, i = 0;
+    while (i + 4 <= s.length) {
+      var t = s.substr(i,2), l = parseInt(s.substr(i+2,2),10);
+      if (isNaN(l)) break;
+      o[t] = s.substr(i+4,l); i += 4 + l;
+    }
+    return o;
+  }
+  function crc16(s){
+    var crc = 0xFFFF;
+    for (var i=0;i<s.length;i++){
+      crc ^= s.charCodeAt(i) << 8;
+      for (var j=0;j<8;j++) crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
+      crc &= 0xFFFF;
+    }
+    return ('0000' + crc.toString(16).toUpperCase()).slice(-4);
+  }
+  function valido(c){
+    return c.length > 30 && c.indexOf('br.gov.bcb.pix') > -1 && c.slice(-8,-4) === '6304' &&
+           c.slice(-4).toUpperCase() === crc16(c.slice(0,-4));
+  }
+  function limpar(c){ return (c || '').trim().replace(/[\r\n\t]+/g,''); }
+
+  function mostrarDados(){
+    var d = tlv(limpar(pix.value));
+    var box = document.getElementById('payee');
+    if (!d['59']) { box.hidden = true; return; }
+    document.getElementById('nome').textContent = d['59'].replace(/_/g,' ');
+    document.getElementById('cidade').textContent = d['60'] ? d['60'].replace(/_/g,' ') : '';
+    var v = parseFloat(d['54']);
+    document.getElementById('valor').textContent = isNaN(v) ? '' :
+      v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    box.hidden = false;
+  }
+  /* ---------- Carregar o código atual (arquivo codigo.txt) ---------- */
+  btn.disabled = true;
+  fetch('codigo.txt?v=' + Date.now(), {cache:'no-store'})
+    .then(function(r){ if (!r.ok) throw new Error('http'); return r.text(); })
+    .then(function(t){
+      var c = limpar(t);
+      if (!valido(c)) throw new Error('invalido');
+      pix.value = c;
+      mostrarDados();
+      btn.disabled = false;
+    })
+    .catch(function(){
+      aviso('Não foi possível carregar o código. Recarregue a página.', true, false);
+    });
+})();
+</script>
+</body>
+</html>
